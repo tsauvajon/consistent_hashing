@@ -9,7 +9,7 @@ fn main() {
     println!("Hello, world!");
 
     let servers = vec!["A".into(), "B".into(), "C".into()];
-    let ring = Ring::new(servers);
+    let ring = Ring::new(servers).expect("Should be able to create a ring");
 
     for key in vec!["hello", "world"] {
         println!(
@@ -44,19 +44,23 @@ impl Ring {
         }
     }
 
-    fn new(servers: Vec<Server>) -> Self {
+    fn new(servers: Vec<Server>) -> Result<Self, String> {
         let mut ring = Self {
             servers: HashMap::new(),
         };
 
         for server in servers {
-            ring.add_server(server);
+            ring.add_server(server)?;
         }
 
-        ring
+        Ok(ring)
     }
 
-    fn add_server(&mut self, server: Server) {
+    fn add_server(&mut self, server: Server) -> Result<(), &str> {
+        if self.servers.len() + NUMBER_OF_POSITIONS_IN_RING as usize > 255 {
+            return Err("The ring is already full");
+        }
+
         let mut inserted_count = 0;
         let mut salt = 0;
         while inserted_count < NUMBER_OF_POSITIONS_IN_RING {
@@ -71,9 +75,13 @@ impl Ring {
                 }
             }
         }
+
+        Ok(())
     }
 
-    fn _remove_server(&mut self, _server: Server) {
+    fn _remove_server(&mut self, _server: Server) -> Option<Server> {
+        // To make things simple for removing servers from the ring, we could have another HashMap
+        // that has the server for keys, and a vec of positions for values.
         todo!()
     }
 }
@@ -98,7 +106,7 @@ fn test_get_server_for_key() {
 
 #[test]
 fn test_new_ring() {
-    let got = Ring::new(vec!["Alice".into(), "Bob".into(), "Charlie".into()]);
+    let got = Ring::new(vec!["Alice".into(), "Bob".into(), "Charlie".into()]).unwrap();
     let want = HashMap::from([
         (28, "Alice".into()),
         (39, "Alice".into()),
@@ -122,7 +130,7 @@ fn test_new_ring() {
 
 #[test]
 fn test_add_server_conflict() {
-    let mut ring = Ring::new(vec!["Alice".into()]);
+    let mut ring = Ring::new(vec!["Alice".into()]).unwrap();
     assert_eq!(
         (1 * NUMBER_OF_POSITIONS_IN_RING) as usize,
         ring.servers.len()
@@ -132,10 +140,25 @@ fn test_add_server_conflict() {
     // reusing the same Server name, so all first 5 keys conflict), it should
     // still be able to insert the new server at 5 locations.
 
-    ring.add_server("Alice".into());
+    ring.add_server("Alice".into()).unwrap();
     assert_eq!(
         (2 * NUMBER_OF_POSITIONS_IN_RING) as usize,
         ring.servers.len()
+    );
+}
+
+#[test]
+fn test_cannot_add_server_to_full_ring() {
+    let mut ring = Ring::new(vec![]).unwrap();
+
+    let number_of_server_we_can_fit_in_the_ring = 255 / NUMBER_OF_POSITIONS_IN_RING as usize;
+    for i in 0..number_of_server_we_can_fit_in_the_ring {
+        ring.add_server(format!("Server number {}", i)).unwrap();
+    }
+
+    assert_eq!(
+        Err("The ring is already full"),
+        ring.add_server("Another server".to_string())
     );
 }
 
