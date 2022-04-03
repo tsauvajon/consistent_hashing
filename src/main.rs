@@ -63,9 +63,13 @@ impl Ring {
             let server_hash_with_salt = hash(format!("{}_{}", &server, salt).as_str());
             salt += 1;
 
-            // TODO: handle occupied position
-            self.servers.insert(server_hash_with_salt, server.clone());
-            inserted_count += 1;
+            match self.servers.contains_key(&server_hash_with_salt) {
+                true => continue, // If we already have a server in this position of the ring, just try again with a different salt.
+                false => {
+                    self.servers.insert(server_hash_with_salt, server.clone());
+                    inserted_count += 1;
+                }
+            }
         }
     }
 
@@ -114,6 +118,25 @@ fn test_new_ring() {
     ]);
 
     assert_eq!(want, got.servers);
+}
+
+#[test]
+fn test_add_server_conflict() {
+    let mut ring = Ring::new(vec!["Alice".into()]);
+    assert_eq!(
+        (1 * NUMBER_OF_POSITIONS_IN_RING) as usize,
+        ring.servers.len()
+    );
+
+    // When inserting another server with conflicting keys (here, we're just
+    // reusing the same Server name, so all first 5 keys conflict), it should
+    // still be able to insert the new server at 5 locations.
+
+    ring.add_server("Alice".into());
+    assert_eq!(
+        (2 * NUMBER_OF_POSITIONS_IN_RING) as usize,
+        ring.servers.len()
+    );
 }
 
 /// In: key
