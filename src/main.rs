@@ -1,4 +1,4 @@
-use std::collections::hash_map::{self, DefaultHasher};
+use std::collections::hash_map::DefaultHasher;
 use std::collections::HashMap;
 use std::hash::{Hash, Hasher};
 
@@ -70,6 +70,30 @@ fn test_get_server_for_key() {
         let got = ring.get_server_for_key(key);
         assert_eq!(Ok(want.to_string()), got, "key: {}", key);
     }
+}
+
+#[test]
+fn test_new_ring() {
+    let got = Ring::new(vec!["Alice".into(), "Bob".into(), "Charlie".into()]);
+    let want = HashMap::from([
+        (28, "Alice".into()),
+        (39, "Alice".into()),
+        (131, "Alice".into()),
+        (148, "Alice".into()),
+        (219, "Alice".into()),
+        (51, "Bob".into()),
+        (161, "Bob".into()),
+        (186, "Bob".into()),
+        (203, "Bob".into()),
+        (236, "Bob".into()),
+        (94, "Charlie".into()),
+        (106, "Charlie".into()),
+        (135, "Charlie".into()),
+        (196, "Charlie".into()),
+        (210, "Charlie".into()),
+    ]);
+
+    assert_eq!(want, got.servers);
 }
 
 /// In: key
