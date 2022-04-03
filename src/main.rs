@@ -6,14 +6,12 @@ use std::hash::{Hash, Hasher};
 const NUMBER_OF_POSITIONS_IN_RING: u8 = 5;
 
 fn main() {
-    println!("Hello, world!");
-
     let servers = vec!["A".into(), "B".into(), "C".into()];
     let ring = Ring::new(servers).expect("Should be able to create a ring");
 
-    for key in vec!["hello", "world"] {
+    for key in vec!["hello", "world", "something", "something else"] {
         println!(
-            "key {} goes into server {}",
+            "key `{}` goes into server `{}`",
             key,
             ring.get_server_for_key(key).unwrap()
         );
@@ -56,6 +54,13 @@ impl Ring {
         Ok(ring)
     }
 
+    /// This adds a server to the ring, at "random" positions.
+    /// In practice, it simply adds some salt to the server name
+    /// and then hashes the value to get a position in the ring.
+    /// It repeats that until we fit the server in as many positions
+    /// as we wanted.
+    /// If there isn't enough space to fit the server, then it
+    /// returns an error instead.
     fn add_server(&mut self, server: Server) -> Result<(), &str> {
         if self.servers.len() + NUMBER_OF_POSITIONS_IN_RING as usize > 255 {
             return Err("The ring is already full");
@@ -79,6 +84,7 @@ impl Ring {
         Ok(())
     }
 
+    /// We should be able to remove a server from the ring.
     fn _remove_server(&mut self, _server: Server) -> Option<Server> {
         // To make things simple for removing servers from the ring, we could have another HashMap
         // that has the server for keys, and a vec of positions for values.
