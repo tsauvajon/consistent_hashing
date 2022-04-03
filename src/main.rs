@@ -2,6 +2,9 @@ use std::collections::hash_map::DefaultHasher;
 use std::collections::HashMap;
 use std::hash::{Hash, Hasher};
 
+/// Each server occupies 5 positions in the ring.
+const NUMBER_OF_POSITIONS_IN_RING: u8 = 5;
+
 fn main() {
     println!("Hello, world!");
 
@@ -42,15 +45,32 @@ impl Ring {
     }
 
     fn new(servers: Vec<Server>) -> Self {
-        let mut map = HashMap::new();
+        let mut ring = Self {
+            servers: HashMap::new(),
+        };
+
         for server in servers {
-            for i in 0..5 {
-                let server_hash_with_salt = hash(format!("{}_{}", &server, i).as_str());
-                map.insert(server_hash_with_salt, server.clone());
-            }
+            ring.add_server(server);
         }
 
-        Self { servers: map }
+        ring
+    }
+
+    fn add_server(&mut self, server: Server) {
+        let mut inserted_count = 0;
+        let mut salt = 0;
+        while inserted_count < NUMBER_OF_POSITIONS_IN_RING {
+            let server_hash_with_salt = hash(format!("{}_{}", &server, salt).as_str());
+            salt += 1;
+
+            // TODO: handle occupied position
+            self.servers.insert(server_hash_with_salt, server.clone());
+            inserted_count += 1;
+        }
+    }
+
+    fn _remove_server(&mut self, _server: Server) {
+        todo!()
     }
 }
 
