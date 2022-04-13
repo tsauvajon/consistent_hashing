@@ -1,5 +1,6 @@
 use std::collections::hash_map::DefaultHasher;
 use std::collections::HashMap;
+use std::fmt::Display;
 use std::hash::{Hash, Hasher};
 
 /// Each server occupies 5 positions in the ring.
@@ -57,7 +58,7 @@ impl Ring {
         let mut salt = 0;
         while inserted_count < NUMBER_OF_POSITIONS_IN_RING {
             let server_hash_with_salt = hash(format!("{}_{}", &server, salt).as_str());
-            salt += 1;
+            salt += 217; // Arbitrary number
 
             match self.servers.contains_key(&server_hash_with_salt) {
                 true => continue, // If we already have a server in this position of the ring, just try again with a different salt.
@@ -101,21 +102,21 @@ fn test_get_server_for_key() {
 fn test_new_ring() {
     let got = Ring::new(vec!["Alice".into(), "Bob".into(), "Charlie".into()]).unwrap();
     let want = HashMap::from([
-        (28, "Alice".into()),
-        (39, "Alice".into()),
-        (131, "Alice".into()),
-        (148, "Alice".into()),
-        (219, "Alice".into()),
-        (51, "Bob".into()),
-        (161, "Bob".into()),
-        (186, "Bob".into()),
-        (203, "Bob".into()),
-        (236, "Bob".into()),
-        (94, "Charlie".into()),
-        (106, "Charlie".into()),
-        (135, "Charlie".into()),
-        (196, "Charlie".into()),
-        (210, "Charlie".into()),
+        (25, "Alice".to_string()),
+        (28, "Alice".to_string()),
+        (90, "Alice".to_string()),
+        (99, "Alice".to_string()),
+        (191, "Alice".to_string()),
+        (35, "Bob".to_string()),
+        (51, "Bob".to_string()),
+        (57, "Bob".to_string()),
+        (81, "Bob".to_string()),
+        (206, "Bob".to_string()),
+        (16, "Charlie".to_string()),
+        (39, "Charlie".to_string()),
+        (108, "Charlie".to_string()),
+        (132, "Charlie".to_string()),
+        (210, "Charlie".to_string()),
     ]);
 
     assert_eq!(want, got.servers);
@@ -179,4 +180,47 @@ fn test_hash() {
         let got = hash(key);
         assert_eq!(want, got, "key: {}", key);
     }
+}
+
+impl Display for Ring {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        let mut server_positions: Vec<_> = self.servers.iter().collect();
+        server_positions.sort_by_key(|(&pos, _server_name)| pos);
+
+        for (position, server_name) in server_positions {
+            std::fmt::Formatter::write_fmt(f, format_args!("{},{}\n", position, server_name))?;
+        }
+
+        Ok(())
+    }
+}
+
+#[test]
+fn test_display() {
+    use std::io::Write;
+
+    let ring = Ring {
+        servers: HashMap::from([
+            (203, "A".to_string()),
+            (88, "A".to_string()),
+            (10, "B".to_string()),
+            (0, "B".to_string()),
+            (137, "C".to_string()),
+            (50, "C".to_string()),
+        ]),
+    };
+
+    let mut output = Vec::new();
+    write!(output, "{}", ring).unwrap();
+
+    let want = r#"0,B
+10,B
+50,C
+88,A
+137,C
+203,A
+"#;
+
+    let got = String::from_utf8(output).unwrap();
+    assert_eq!(want, got)
 }

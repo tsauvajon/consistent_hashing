@@ -13,4 +13,6 @@ fn main() {
             ring.get_server_for_key(key).unwrap()
         );
     }
+
+    println!("\nRing:\n{}", ring);
 }
