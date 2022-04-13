@@ -56,3 +56,8 @@ many nodes for each server, the repartition between servers is much more evened 
 a node doesn't negatively impact the repartition. Also, rebalancing is spread out between several nodes:
 for example, on the picture above, if we added server D at positions 10, 115 and 203, we would move just
 a few keys from servers A, B and C.
+
+
+# TODO
+
+Find a way to build a visualisation for the ring.
